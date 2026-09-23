@@ -1,0 +1,15 @@
+{
+  "name": "cinematic-visual-assets-clone",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync": "node scripts/sync-source.mjs",
+    "build:pages": "node scripts/build-pages.mjs",
+    "start": "node server.mjs",
+    "dev": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
