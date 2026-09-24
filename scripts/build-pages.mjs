@@ -8,6 +8,10 @@ const outputDir = resolve('dist');
 
 await rm(outputDir, { recursive: true, force: true });
 await cp(publicDir, outputDir, { recursive: true });
+await Promise.all([
+  rm(resolve(outputDir, 'liblib-import.html'), { force: true }),
+  rm(resolve(outputDir, 'liblib-prompt-import.html'), { force: true })
+]);
 await mkdir(resolve(outputDir, 'data'), { recursive: true });
 
 const sourceData = JSON.parse(await readFile(resolve('data/category_items.json'), 'utf8'));

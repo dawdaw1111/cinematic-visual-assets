@@ -10,7 +10,26 @@ npm start
 
 浏览器打开 `http://localhost:4173`。
 
+## 视频项目画布
+
+- 项目列表：`http://localhost:4173/projects`
+- 《回魂》画布：`http://localhost:4173/projects/huihun`
+- 项目、节点和连线数据：`public/data/video-projects.json`
+- LibTV 原始导出：`data/liblib-project-export.json`
+
+当前画布已替换为 LibTV 项目“微恐短片《回魂》- 副本”的真实内容：291 个内容节点，按分镜图、人物/场景/资产、生成视频三个分组展示。图片和视频使用 LibTV 原项目资源地址。目前已从原画布逐节点核对并导入 15 条真实提示词，其余提示词仍在提取中；没有原文的节点不会伪造内容。单击节点查看详情，双击优先查看该节点的提示词或缺失说明；画布支持拖动、滚轮缩放、适应屏幕、小地图和项目结构定位。导入脚本支持从每个原始节点的 `prompt`、`negativePrompt` 字段补充提示词。
+
+如需重新转换已经导出的 LibTV 数据：
+
+在 `data/liblib-project-export.json` 的对应 `groups[].items[]` 中保留原节点 `id`，并补充原文 `prompt`（可选 `negativePrompt`），然后运行：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/import-liblib-clipboard.ps1
+```
+
 在线版本：<https://dawdaw1111.github.io/cinematic-visual-assets/>
+
+GitHub Pages 发布的是静态浏览版本，不包含本地 Node 接口和提示词导入工具。素材仍引用 LibTV 原项目地址，能否播放取决于源站资源的可访问性。
 
 ## 重新同步公开内容
 

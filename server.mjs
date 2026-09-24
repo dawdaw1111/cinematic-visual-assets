@@ -7,6 +7,7 @@ import { Readable } from 'node:stream';
 
 const root = resolve('public');
 const dataFile = resolve('data/category_items.json');
+const liblibImportFile = resolve('data/liblib-project-export.json');
 const uploadDir = resolve('public/assets/uploads');
 const port = Number(process.env.PORT || 4173);
 
@@ -57,6 +58,51 @@ async function saveData(data) {
 
 async function handleApi(req, res, url) {
   const collectionPath = '/__pb/api/category_items';
+  if (url.pathname === '/__pb/api/liblib-prompts' && req.method === 'POST') {
+    const origin = req.headers.origin;
+    if (origin && origin !== `http://localhost:${port}` && origin !== `http://127.0.0.1:${port}`) {
+      return json(res, 403, { message: 'Local import only' }), true;
+    }
+    const body = await readBody(req);
+    if (!Array.isArray(body?.records)) {
+      return json(res, 400, { message: 'Invalid prompt records' }), true;
+    }
+    const source = JSON.parse(await readFile(liblibImportFile, 'utf8'));
+    const items = source.groups.flatMap((group) => group.items || []);
+    const seen = new Set();
+    let prompts = 0;
+    let checked = 0;
+    for (const record of body.records) {
+      const index = Number(record.index);
+      const item = items[index];
+      const media = String(item?.media || '').split('?')[0];
+      const observedMedia = String(record.src || '').split('?')[0];
+      if (!Number.isInteger(index) || !item || seen.has(index) || !record.matched || !media || media !== observedMedia) {
+        return json(res, 400, { message: `Prompt/media mismatch at index ${record.index}` }), true;
+      }
+      seen.add(index);
+      item.sourceNodeId = String(record.nodeId || '');
+      item.promptChecked = true;
+      checked++;
+      if (typeof record.prompt === 'string' && record.prompt.trim()) {
+        item.prompt = record.prompt;
+        prompts++;
+      }
+    }
+    await writeFile(liblibImportFile, `${JSON.stringify(source, null, 2)}\n`, 'utf8');
+    return json(res, 200, { checked, prompts, totalItems: items.length }), true;
+  }
+  if (url.pathname === '/__pb/api/liblib-import' && req.method === 'POST') {
+    const body = await readBody(req);
+    if (!body?.project || !Array.isArray(body.groups)) {
+      return json(res, 400, { message: 'Invalid LibTV project payload' }), true;
+    }
+    await writeFile(liblibImportFile, `${JSON.stringify(body, null, 2)}\n`, 'utf8');
+    return json(res, 200, {
+      saved: body.groups.reduce((total, group) => total + (group.items?.length || 0), 0),
+      file: 'data/liblib-project-export.json'
+    }), true;
+  }
   if (url.pathname === '/__pb/api/proxy/imgupload' && req.method === 'POST') {
     const webRequest = new Request('http://localhost/upload', {
       method: 'POST',

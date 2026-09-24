@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<title>LibTV 提示词导入</title>
+<style>body{font:16px system-ui;background:#151515;color:#eee;max-width:780px;margin:50px auto;padding:0 20px}textarea{width:100%;height:300px;background:#252525;color:#fff;border:1px solid #555;padding:12px;box-sizing:border-box}button{margin-top:16px;padding:10px 20px;cursor:pointer}pre{white-space:pre-wrap}</style>
+<h1>LibTV 提示词导入</h1>
+<p>仅用于将原画布读取到的节点提示词与本地素材 URL 精确匹配后合并。</p>
+<textarea id="records" aria-label="提示词记录 JSON"></textarea>
+<br><button id="import">导入提示词</button>
+<pre id="result"></pre>
+<script>
+document.getElementById('import').addEventListener('click', async () => {
+  const result = document.getElementById('result');
+  try {
+    const records = JSON.parse(document.getElementById('records').value);
+    const response = await fetch('/__pb/api/liblib-prompts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ records })
+    });
+    const data = await response.json();
+    result.textContent = JSON.stringify(data, null, 2);
+  } catch (error) {
+    result.textContent = String(error);
+  }
+});
+</script>
+</html>
