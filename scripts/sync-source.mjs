@@ -3,6 +3,7 @@ import { createWriteStream } from 'node:fs';
 import { basename, extname, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
+import { stripHomeLink } from './strip-home-link.mjs';
 
 const sourceRoot = 'https://vibex.runninghub.cn/p/app-512109a8895f48c0b1ac4afc6ed12385';
 const apiUrl = `${sourceRoot}/__pb/api/category_items?perPage=500`;
@@ -107,7 +108,7 @@ await Promise.all([
 // 同时避免运行时依赖外部域名。
 const localCelestiaUrl = '/assets/hero-celestia-preview-0yO3jXO8.gif';
 
-const localBundle = originalBundle
+const localBundle = stripHomeLink(originalBundle
   .replaceAll(`${sourceRoot}/__pb`, '/__pb')
   .replace(
     'function ig(){if(typeof window>`u`)return null;let e=window.location.pathname.match(/^\\/(?:app-preview|p)\\/app-[0-9a-f]{32}(?=\\/|$)/);return e?e[0]:null}',
@@ -115,7 +116,7 @@ const localBundle = originalBundle
   )
   .replaceAll(heroVideoUrl, '/assets/hero.mp4')
   .replaceAll(orbitUrl, '/assets/showcase.gif')
-  .replaceAll(celestiaUrl, localCelestiaUrl);
+  .replaceAll(celestiaUrl, localCelestiaUrl));
 
 await Promise.all([
   writeFile(resolve(publicAssets, 'index.js'), localBundle, 'utf8'),
