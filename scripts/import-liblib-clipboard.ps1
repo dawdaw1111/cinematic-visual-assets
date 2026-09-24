@@ -1,4 +1,4 @@
-param(
+﻿param(
   [string]$SourcePath = (Join-Path $PSScriptRoot "..\data\liblib-project-export.json"),
   [string]$OutputPath = (Join-Path $PSScriptRoot "..\public\data\video-projects.json")
 )
@@ -14,6 +14,7 @@ $source = $raw | ConvertFrom-Json
 if (-not $source.project -or -not $source.groups) {
   throw "The source file is not a recognized LibTV project export."
 }
+$projectTitle = ([string]$source.project.title -replace '\s*[-－—]\s*副本\s*$', '').Trim()
 
 $nodes = [System.Collections.Generic.List[object]]::new()
 $edges = [System.Collections.Generic.List[object]]::new()
@@ -36,6 +37,8 @@ for ($groupIndex = 0; $groupIndex -lt $source.groups.Count; $groupIndex++) {
     $row = [math]::Floor($itemIndex / $columns)
     $type = [string]$item.type
 
+    $typeLabel = @{ image = '图片素材'; video = '视频镜头'; audio = '音色素材' }[$type]
+    if (-not $typeLabel) { $typeLabel = '项目节点' }
     $node = [ordered]@{
       id = "lib-$($item.id)"
       type = $type
@@ -43,13 +46,10 @@ for ($groupIndex = 0; $groupIndex -lt $source.groups.Count; $groupIndex++) {
       scene = [string]$group.name
       x = 80 + ($column * $xGap)
       y = $startY + ($row * $yGap)
-      description = "Original $type asset imported from the LibTV project."
-      source = "LibTV"
-      sourceUrl = [string]$source.project.sourceUrl
-      tags = @("LibTV", [string]$group.name)
+      description = "$typeLabel · $([string]$group.name)"
+      tags = @([string]$group.name)
       metadata = @(
-        [ordered]@{ label = "Source"; value = "LibTV original project" },
-        [ordered]@{ label = "Group"; value = [string]$group.name }
+        [ordered]@{ label = "分组"; value = [string]$group.name }
       )
     }
 
@@ -65,7 +65,6 @@ for ($groupIndex = 0; $groupIndex -lt $source.groups.Count; $groupIndex++) {
     }
     if (-not [string]::IsNullOrWhiteSpace($itemPrompt)) {
       $node.prompt = $itemPrompt
-      $node.metadata += [ordered]@{ label = "Prompt"; value = "Read from the original LibTV node" }
     }
     if (-not [string]::IsNullOrWhiteSpace([string]$item.negativePrompt)) {
       $node.negativePrompt = [string]$item.negativePrompt
@@ -82,22 +81,24 @@ for ($groupIndex = 0; $groupIndex -lt $source.groups.Count; $groupIndex++) {
   }
 }
 
-$coverItem = $source.groups[1].items | Where-Object { $_.type -eq "image" } | Select-Object -First 1
+$coverItem = $source.groups | ForEach-Object { $_.items } | Where-Object { $_.title -eq "封面" -and $_.type -eq "image" -and $_.media } | Select-Object -First 1
+if (-not $coverItem) {
+  $coverItem = $source.groups[1].items | Where-Object { $_.type -eq "image" } | Select-Object -First 1
+}
 if (-not $coverItem) {
   $coverItem = $source.groups[0].items | Where-Object { $_.type -eq "image" } | Select-Object -First 1
 }
 
 $project = [ordered]@{
   id = "huihun"
-  title = [string]$source.project.title
-  subtitle = "Complete LibTV project import"
-  description = "Imported directly from the provided LibTV canvas with its real storyboards, character and scene assets, voice nodes, video outputs, and extracted generation prompt."
-  status = "LibTV synced"
+  title = $projectTitle
+  subtitle = "分镜与视频创作画布"
+  description = "汇集分镜画面、人物与场景设定、音色素材和视频镜头。"
+  status = "创作档案"
   updated = (Get-Date -Format "yyyy-MM-dd")
-  duration = "294 nodes"
+  duration = "$($nodes.Count) 个节点"
   accent = "#8b5cf6"
-  sourceUrl = [string]$source.project.sourceUrl
-  tags = @("LibTV", "Canvas", "Imported")
+  tags = @("分镜", "角色设定", "视频镜头")
   cover = [ordered]@{ type = "image"; url = [string]$coverItem.media }
   scenes = @($sceneNames)
   nodes = @($nodes)
@@ -106,7 +107,6 @@ $project = [ordered]@{
 
 $result = [ordered]@{
   version = 2
-  importedFrom = [string]$source.project.sourceUrl
   importedAt = [string]$source.project.importedAt
   projects = @([pscustomobject]$project)
 }

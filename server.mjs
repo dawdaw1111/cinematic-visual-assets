@@ -95,7 +95,7 @@ async function handleApi(req, res, url) {
   if (url.pathname === '/__pb/api/liblib-import' && req.method === 'POST') {
     const body = await readBody(req);
     if (!body?.project || !Array.isArray(body.groups)) {
-      return json(res, 400, { message: 'Invalid LibTV project payload' }), true;
+      return json(res, 400, { message: 'Invalid project payload' }), true;
     }
     await writeFile(liblibImportFile, `${JSON.stringify(body, null, 2)}\n`, 'utf8');
     return json(res, 200, {

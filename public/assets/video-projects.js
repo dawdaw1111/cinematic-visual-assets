@@ -152,14 +152,14 @@ function renderProjectList() {
           <span class="vp-brand-mark">${icon("film", 20)}</span>
           <span><b>电影级视觉资产库</b><small>VIDEO PROJECTS</small></span>
         </button>
-        <div class="vp-local-badge"><span></span>LibTV 项目同步</div>
+        <div class="vp-local-badge"><span></span>创作项目</div>
       </header>
 
       <section class="vp-library-hero">
         <div>
           <p class="vp-eyebrow">PROJECT CANVAS</p>
           <h1>视频项目画布</h1>
-          <p class="vp-hero-copy">把你的 LibTV 视频项目按真实分组搬进网站，让分镜、人物资产、提示词与生成视频保持在同一张画布里。</p>
+          <p class="vp-hero-copy">让分镜、人物资产、提示词与生成视频保持在同一张画布里。</p>
         </div>
         <div class="vp-library-stats" aria-label="项目统计">
           <div><strong>${state.projects.length}</strong><span>视频项目</span></div>
@@ -208,13 +208,10 @@ function renderProjectList() {
 }
 
 function projectCard(project) {
-  const importedFromLibTV = project.sourceUrl?.includes("liblib.tv");
-  const subtitle = importedFromLibTV ? "LibTV 原项目完整导入" : project.subtitle;
-  const description = importedFromLibTV
-    ? "来自你提供的 LibTV 画布，包含真实分镜、人物与场景资产、音色节点、视频结果和生成提示词。"
-    : project.description;
-  const status = importedFromLibTV ? "LibTV 已同步" : project.status;
-  const duration = importedFromLibTV ? `${project.nodes.length + project.scenes.length} 节点` : project.duration;
+  const subtitle = project.subtitle || "视频创作项目";
+  const description = project.description || "查看项目画布与创作素材。";
+  const status = project.status || "创作档案";
+  const duration = project.duration || `${project.nodes.length} 个节点`;
   const media = project.cover?.type === "video"
     ? `<video muted loop playsinline preload="metadata" src="${escapeHtml(project.cover.url)}"></video>`
     : `<img src="${escapeHtml(project.cover?.url)}" alt="" loading="lazy" />`;
@@ -258,10 +255,8 @@ function renderNotFound() {
 }
 
 function renderCanvas(project) {
-  const importedFromLibTV = project.sourceUrl?.includes("liblib.tv");
-  const subtitle = importedFromLibTV ? "LibTV 原项目完整导入" : project.subtitle;
-  const status = importedFromLibTV ? "LibTV 已同步" : project.status;
-  const duration = importedFromLibTV ? `${project.nodes.length + project.scenes.length} 节点` : project.duration;
+  const subtitle = project.subtitle || "视频创作项目";
+  const status = project.status || "创作档案";
   document.title = `${project.title} · 视频项目画布`;
   app.innerHTML = `
     <main class="vp-workspace" style="--project-accent:${escapeHtml(project.accent)}">
@@ -274,7 +269,6 @@ function renderCanvas(project) {
         <div class="vp-workspace-meta">
           <span>${escapeHtml(status)}</span>
           <span>${project.nodes.length} 个节点</span>
-          <span>${escapeHtml(duration)}</span>
         </div>
         <button class="vp-home-button" type="button" data-home>${icon("home", 17)}<span>素材库首页</span></button>
       </header>
@@ -285,7 +279,6 @@ function renderCanvas(project) {
           <nav class="vp-scene-list">
             ${project.scenes.map((scene, index) => sceneGroup(project, scene, index)).join("")}
           </nav>
-          <div class="vp-project-note"><span>${icon("layers", 18)}</span><div><b>LibTV 数据镜像</b><p>素材来自原项目；已导入 ${project.nodes.filter((node) => node.prompt).length}/${project.nodes.length} 条节点提示词。</p></div></div>
         </aside>
 
         <section class="vp-canvas-wrap" aria-label="${escapeHtml(project.title)}节点画布">
@@ -471,7 +464,7 @@ function nodeCard(node) {
       : `<video src="${escapeHtml(node.media.url)}" muted playsinline preload="none"></video>`;
     preview = `<div class="vp-node-media vp-node-video">${poster}<span>${icon("play", 17)}</span></div>`;
   } else if (node.type === "audio") {
-    preview = `<div class="vp-node-audio-preview"><span>${icon("audio", 30)}</span><small>LIBTV VOICE ASSET</small></div>`;
+    preview = `<div class="vp-node-audio-preview"><span>${icon("audio", 30)}</span><small>音色素材</small></div>`;
   } else {
     preview = `<div class="vp-node-text-preview">${escapeHtml(node.prompt || node.description)}</div>`;
   }
@@ -484,26 +477,11 @@ function nodeTypeLabel(type) {
 }
 
 function displayDescription(node) {
-  if (node.source !== "LibTV") return node.description || "";
-  return ({
-    image: "LibTV 原项目图片素材",
-    video: "LibTV 原项目视频素材",
-    audio: "LibTV 原项目角色音色",
-  })[node.type] || "LibTV 原项目节点";
-}
-
-function displayMetadata(value = "") {
-  return ({
-    Source: "来源",
-    Group: "分组",
-    Prompt: "提示词",
-    "LibTV original project": "LibTV 原项目",
-    "Read from the original LibTV node": "已从 LibTV 原节点读取",
-  })[value] || value;
+  return node.description || "";
 }
 
 function emptyDetail() {
-  return `<div class="vp-detail-empty"><span>${icon("nodes", 30)}</span><h2>选择一个节点</h2><p>查看对应的素材、提示词和生成参数。</p></div>`;
+  return `<div class="vp-detail-empty"><span>${icon("nodes", 30)}</span><h2>选择一个节点</h2><p>查看对应的素材、提示词和节点信息。</p></div>`;
 }
 
 function selectNode(id, { promptFirst = false } = {}) {
@@ -534,13 +512,13 @@ function detailContent(node, promptFirst = false) {
     : node.media?.type === "video"
       ? `<div class="vp-detail-media"><video src="${escapeHtml(node.media.url)}" controls playsinline preload="metadata"></video></div>`
       : node.type === "audio"
-        ? `<div class="vp-detail-audio"><span>${icon("audio", 30)}</span><div><b>角色音色节点</b><small>音频保留在 LibTV 原项目中</small></div></div>`
+        ? `<div class="vp-detail-audio"><span>${icon("audio", 30)}</span><div><b>角色音色节点</b><small>暂无可播放的音频文件</small></div></div>`
         : "";
   const prompt = node.prompt
     ? `<section class="vp-detail-section vp-prompt-section" data-prompt-section><div class="vp-detail-section-head"><h3>对应提示词</h3><button type="button" data-copy="${escapeHtml(node.prompt)}" aria-label="复制提示词">${icon("copy", 16)}复制</button></div><p class="vp-prompt-text">${escapeHtml(node.prompt)}</p></section>`
-    : `<section class="vp-detail-section vp-prompt-section vp-prompt-missing" data-prompt-section><h3>对应提示词暂未导入</h3><p>当前导入数据只包含这个节点的素材地址，没有它在 LibTV 中使用的提示词。请从原节点补充提示词后重新导入。</p></section>`;
+    : `<section class="vp-detail-section vp-prompt-section vp-prompt-missing" data-prompt-section><h3>暂无对应提示词</h3><p>这个节点暂未录入提示词。</p></section>`;
   const negative = node.negativePrompt ? `<section class="vp-detail-section"><div class="vp-detail-section-head"><h3>负向提示词</h3><button type="button" data-copy="${escapeHtml(node.negativePrompt)}" aria-label="复制负向提示词">${icon("copy", 16)}复制</button></div><p class="vp-prompt-text vp-negative">${escapeHtml(node.negativePrompt)}</p></section>` : "";
-  const metadata = node.metadata?.length ? `<section class="vp-detail-section"><h3>生成参数</h3><dl class="vp-metadata">${node.metadata.map((item) => `<div><dt>${escapeHtml(displayMetadata(item.label))}</dt><dd>${escapeHtml(displayMetadata(item.value))}</dd></div>`).join("")}</dl></section>` : "";
+  const metadata = node.metadata?.length ? `<section class="vp-detail-section"><h3>节点信息</h3><dl class="vp-metadata">${node.metadata.map((item) => `<div><dt>${escapeHtml(item.label)}</dt><dd>${escapeHtml(item.value)}</dd></div>`).join("")}</dl></section>` : "";
   const description = `<p class="vp-detail-description">${escapeHtml(displayDescription(node))}</p><div class="vp-tags">${(node.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>`;
   return `<div class="vp-detail-scroll"><div class="vp-detail-header"><div><p>${escapeHtml(promptFirst ? "节点提示词" : nodeTypeLabel(node.type))}</p><h2>${escapeHtml(node.title)}</h2></div><button type="button" data-close-detail aria-label="关闭节点详情">${icon("close", 19)}</button></div>${promptFirst ? `${prompt}${media}${description}` : `${media}${description}${prompt}`}${negative}${metadata}</div>`;
 }
